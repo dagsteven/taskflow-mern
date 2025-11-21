@@ -82,7 +82,7 @@ function App() {
             <Toaster position="bottom-center" toastOptions={{ style: { background: '#333', color: '#fff' } }} />
 
             {/* HEADER */}
-            <div className="w-[45%] md:w-[45%] mb-10 flex items-center justify-between">
+            <div className="w-full md:w-[45%] mb-10 flex items-center justify-between">
                 <div className="flex items-center gap-3">
                     <div className="w-14 h-14 rounded-xl bg-linear-to-br from-blue-500 to-purple-600 flex items-center justify-center shadow-lg shadow-purple-500/20">
                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-8 h-8 text-white">
@@ -97,7 +97,7 @@ function App() {
             </div>
 
             {/* LISTE */}
-            <div className="w-[45%] md:w-[45%]">
+            <div className="w-full md:w-[45%]">
                 <h4 className="text-sm text-gray-400 mb-6 uppercase tracking-widest font-semibold pl-1">Votre Espace</h4>
 
                 {isLoading ? (
