@@ -7,6 +7,11 @@ const todoRoutes = require('./routes/todoRoutes');
 const app = express();
 const PORT = process.env.PORT || 5000;
 
+// Route racine pour UptimeRobot
+app.get('/', (req, res) => {
+  res.send('Le serveur TaskFlow est en ligne ! 🚀');
+});
+
 app.use(express.json());
 app.use(cors());
 
