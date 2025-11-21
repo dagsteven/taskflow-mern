@@ -3,7 +3,7 @@ import axios from 'axios';
 import toast, { Toaster } from 'react-hot-toast';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 
-const API_BASE = "http://localhost:5000/api";
+const API_BASE = "https://taskflow-mern-r737.onrender.com/api";
 
 function App() {
     const [todos, setTodos] = useState([]);
