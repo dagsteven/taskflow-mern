@@ -1,12 +1,12 @@
 const express = require('express');
 const router = express.Router();
 const controller = require('../controllers/todoController');
+const { protect } = require('../middleware/authMiddleware'); // Import du vigile
 
-// On relie l'URL à la fonction du contrôleur
-router.get('/todos', controller.getTodos);
-router.post('/todos/new', controller.createTodo);
-router.delete('/todos/delete/:id', controller.deleteTodo);
-router.put('/todos/complete/:id', controller.completeTodo);
-router.put('/todos/reorder', controller.reorderTodos); 
+router.get('/todos', protect, controller.getTodos);
+router.post('/todos/new', protect, controller.createTodo);
+router.delete('/todos/delete/:id', protect, controller.deleteTodo);
+router.put('/todos/complete/:id', protect, controller.completeTodo);
+router.put('/todos/reorder', protect, controller.reorderTodos);
 
 module.exports = router;

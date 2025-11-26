@@ -1,44 +1,47 @@
 const Todo = require('../models/Todo');
 
-// Lire les tâches (TRIÉES PAR ORDRE)
+// Lire UNIQUEMENT les tâches de l'utilisateur connecté
 exports.getTodos = async (req, res) => {
-  // .sort({ order: 1 }) signifie : trier par numéro d'ordre croissant
-  const todos = await Todo.find().sort({ order: 1 });
+  // req.user.id vient du Middleware qu'on a créé
+  const todos = await Todo.find({ owner: req.user.id }).sort({ order: 1 });
   res.json(todos);
 };
 
-// Créer une tâche
+// Créer une tâche en l'assignant à l'utilisateur
 exports.createTodo = async (req, res) => {
   const newTodo = new Todo({
-    text: req.body.text
+    text: req.body.text,
+    owner: req.user.id // <--- On met le tampon du propriétaire
   });
   await newTodo.save();
   res.json(newTodo);
 };
 
-// Supprimer une tâche
+// Supprimer (Vérifier que c'est bien MA tâche)
 exports.deleteTodo = async (req, res) => {
-  const result = await Todo.findByIdAndDelete(req.params.id);
+  const result = await Todo.findOneAndDelete({ _id: req.params.id, owner: req.user.id });
   res.json(result);
 };
 
-// Modifier statut
+// Compléter (Vérifier que c'est bien MA tâche)
 exports.completeTodo = async (req, res) => {
-  const todo = await Todo.findById(req.params.id);
-  todo.complete = !todo.complete;
-  await todo.save();
+  const todo = await Todo.findOne({ _id: req.params.id, owner: req.user.id });
+  if(todo) {
+      todo.complete = !todo.complete;
+      await todo.save();
+  }
   res.json(todo);
 };
 
-// Réorganiser les tâches
+// Réorganiser (Uniquement MES tâches)
 exports.reorderTodos = async (req, res) => {
   const { todos } = req.body;
-  
-  // On reçoit la liste complète dans le nouvel ordre
-  // On met à jour l'index 'order' de chaque tâche dans la DB
   for (let i = 0; i < todos.length; i++) {
-    await Todo.findByIdAndUpdate(todos[i]._id, { order: i });
+    // On ajoute la sécurité owner ici aussi
+    await Todo.findOneAndUpdate(
+        { _id: todos[i]._id, owner: req.user.id }, 
+        { order: i }
+    );
   }
-  
   res.json({ message: "Ordre mis à jour" });
 };
