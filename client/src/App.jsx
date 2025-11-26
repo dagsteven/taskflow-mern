@@ -29,15 +29,12 @@ function App() {
         toast('À bientôt !', { icon: '👋' });
     };
 
-    // --- CORRECTION DU USEEFFECT ---
     useEffect(() => {
         if (!token) return;
         
         const getTodos = async () => {
             setIsLoading(true);
             try {
-                // CORRECTION ICI : On n'appelle plus getConfig(), on écrit le header directement.
-                // Cela évite l'erreur de dépendance manquante.
                 const res = await axios.get(API_BASE + "/todos", {
                     headers: { Authorization: `Bearer ${token}` }
                 });
@@ -50,7 +47,7 @@ function App() {
             }
         };
         getTodos();
-    }, [token]); // Maintenant, le tableau de dépendance est correct.
+    }, [token]);
 
     // --- ACTIONS ---
 

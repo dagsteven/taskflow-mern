@@ -2,8 +2,9 @@ import { useState } from 'react';
 import axios from 'axios';
 import toast from 'react-hot-toast';
 
+// URL DE PRODUCTION (RENDER)
+const API_URL = "https://taskflow-mern-r737.onrender.com/api/auth";
 
-const API_URL = "http://localhost:5000/api/auth"; 
 
 function Register({ setPage }) {
     const [username, setUsername] = useState("");
