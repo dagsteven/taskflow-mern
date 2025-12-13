@@ -5,7 +5,7 @@ import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 
 import Login from './pages/Login';
 import Register from './pages/Register';
-
+import { playSuccessSound } from './sounds';
 
 const API_BASE = "https://taskflow-mern-r737.onrender.com/api";
 
@@ -52,10 +52,24 @@ function App() {
     // --- ACTIONS ---
 
     const completeTodo = async (id) => {
+        const taskToToggle = todos.find(todo => todo._id === id);
+
+        if (taskToToggle && !taskToToggle.complete) {
+            playSuccessSound();
+        }
+
         try {
             const data = await axios.put(API_BASE + "/todos/complete/" + id, {}, getConfig());
-            setTodos(prev => prev.map(todo => todo._id === data.data._id ? data.data : todo));
-        } catch { toast.error("Erreur connexion"); }
+            
+            setTodos(prev => prev.map(todo => {
+                if (todo._id === data.data._id) {
+                    return data.data;
+                }
+                return todo;
+            }));
+        } catch { 
+            toast.error("Erreur connexion"); 
+        }
     }
 
     const deleteTodo = async (id) => {
@@ -105,6 +119,11 @@ function App() {
         );
     }
 
+    // --- CALCUL PROGRESSION ---
+    const totalTasks = todos.length;
+    const completedTasks = todos.filter(t => t.complete).length;
+    const progress = totalTasks === 0 ? 0 : Math.round((completedTasks / totalTasks) * 100);
+
     return (
         <div className="min-h-screen bg-gray-900 text-white font-sans flex flex-col items-center py-12 px-4">
             <Toaster position="bottom-center" toastOptions={{ style: { background: '#333', color: '#fff' } }} />
@@ -119,6 +138,25 @@ function App() {
                 <button onClick={logout} className="text-sm text-gray-400 hover:text-white border border-gray-700 px-3 py-1 rounded-lg hover:bg-gray-800 transition-colors">
                     Déconnexion
                 </button>
+            </div>
+            {/* BARRE DE PROGRESSION */}
+            <div className="w-full md:w-[45%] mb-8">
+                <div className="flex justify-between text-sm text-gray-400 mb-2 font-medium">
+                    <span>Progression</span>
+                    <span>{progress}%</span>
+                </div>
+                <div className="w-full bg-gray-800 rounded-full h-3 overflow-hidden border border-gray-700">
+                    <div 
+                        className="bg-linear-to-r from-blue-500 to-purple-600 h-3 rounded-full transition-all duration-500 ease-out" 
+                        style={{ width: `${progress}%` }}
+                    ></div>
+                </div>
+                {/* Petit message d'encouragement */}
+                {progress === 100 && totalTasks > 0 && (
+                    <p className="text-center text-sm text-green-400 mt-2 animate-bounce">
+                        🎉 Bravo ! Tout est terminé !
+                    </p>
+                )}
             </div>
 
             <div className="w-full md:w-[45%]">
