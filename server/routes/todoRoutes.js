@@ -8,5 +8,6 @@ router.post('/todos/new', protect, controller.createTodo);
 router.delete('/todos/delete/:id', protect, controller.deleteTodo);
 router.put('/todos/complete/:id', protect, controller.completeTodo);
 router.put('/todos/reorder', protect, controller.reorderTodos);
+router.put('/todos/edit/:id', protect, controller.editTodo);
 
 module.exports = router;

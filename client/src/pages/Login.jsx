@@ -5,6 +5,9 @@ import toast from 'react-hot-toast';
 // URL DE PRODUCTION (RENDER)
 const API_URL = "https://taskflow-mern-r737.onrender.com/api/auth";
 
+// URL DE DÉVELOPPEMENT (LOCALHOST)
+// const API_URL = "http://localhost:5000/api/auth";
+
 function Login({ setToken, setPage }) {
     const [username, setUsername] = useState("");
     const [password, setPassword] = useState("");

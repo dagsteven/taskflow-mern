@@ -45,3 +45,22 @@ exports.reorderTodos = async (req, res) => {
   }
   res.json({ message: "Ordre mis à jour" });
 };
+
+// MODIFIER LE TEXTE D'UNE TÂCHE
+exports.editTodo = async (req, res) => {
+  try {
+    const { text } = req.body;
+    
+    // On cherche la tâche par ID et par Propriétaire (sécurité)
+    // { new: true } permet de renvoyer la version modifiée, pas l'ancienne
+    const updatedTodo = await Todo.findOneAndUpdate(
+      { _id: req.params.id, owner: req.user.id },
+      { text: text },
+      { new: true } 
+    );
+
+    res.json(updatedTodo);
+  } catch (err) {
+    res.status(500).json({ message: "Erreur lors de la modification" });
+  }
+};
