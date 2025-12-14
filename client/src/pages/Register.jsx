@@ -7,7 +7,6 @@ const API_URL = "https://taskflow-mern-r737.onrender.com/api/auth";
 
 function Register({ setPage }) {
     const [username, setUsername] = useState("");
-    const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     
     // NOUVEAU
@@ -18,7 +17,6 @@ function Register({ setPage }) {
             // .trim() sur le pseudo et l'email
             await axios.post(API_URL + "/register", { 
                 username: username.trim(), 
-                email: email.trim(), 
                 password 
             });
             toast.success("Compte créé ! Connectez-vous.");
@@ -39,12 +37,6 @@ function Register({ setPage }) {
                     type="text" placeholder="Pseudo" 
                     className="w-full p-4 bg-gray-900 border border-gray-700 rounded-xl mb-4 focus:border-purple-500 focus:outline-none transition-colors"
                     onChange={e => setUsername(e.target.value)}
-                />
-                
-                <input 
-                    type="email" placeholder="Email (pour récupération)" 
-                    className="w-full p-4 bg-gray-900 border border-gray-700 rounded-xl mb-4 focus:border-purple-500 focus:outline-none transition-colors"
-                    onChange={e => setEmail(e.target.value)}
                 />
 
                 {/* Champ Mot de passe avec Oeil */}
