@@ -2,25 +2,24 @@ import { useState } from 'react';
 import axios from 'axios';
 import toast from 'react-hot-toast';
 
-// URL DE PRODUCTION (RENDER)
+// URL de Production (Render) ou Local
 const API_URL = "https://taskflow-mern-r737.onrender.com/api/auth";
 
-// URL DE DÉVELOPPEMENT (LOCALHOST)
-// const API_URL = "http://localhost:5000/api/auth";
-
-function Login({ setToken, setPage }) {
-    const [username, setUsername] = useState("");
+// AJOUTE setUsername DANS LES PROPS ICI 👇
+function Login({ setToken, setPage, setUsername }) {
+    const [username, setUsernameInput] = useState("");
     const [password, setPassword] = useState("");
 
     const handleLogin = async () => {
         try {
             const res = await axios.post(API_URL + "/login", { username, password });
             
-            // Sauvegarde du token
             localStorage.setItem("token", res.data.token);
+            localStorage.setItem("username", res.data.username);
             
-            // Mise à jour pour utilisateur connecté
-            setToken(res.data.token); 
+            setToken(res.data.token);
+            setUsername(res.data.username); // ⚠️ C'EST ICI QUE CA SE JOUE
+            
             toast.success("Bon retour " + res.data.username + " !");
         } catch (err) {
             toast.error(err.response?.data?.message || "Erreur de connexion");
@@ -37,7 +36,7 @@ function Login({ setToken, setPage }) {
                 <input 
                     type="text" placeholder="Pseudo" 
                     className="w-full p-4 bg-gray-900 border border-gray-700 rounded-xl mb-4 focus:border-blue-500 focus:outline-none transition-colors"
-                    onChange={e => setUsername(e.target.value)}
+                    onChange={e => setUsernameInput(e.target.value)}
                 />
                 <input 
                     type="password" placeholder="Mot de passe" 
