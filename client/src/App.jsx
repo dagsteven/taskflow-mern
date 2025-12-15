@@ -8,7 +8,10 @@ import Register from './pages/Register';
 import { playSuccessSound } from './sounds';
 
 // URL de Production (Render)
-const API_BASE = "https://taskflow-mern-r737.onrender.com/api";
+// const API_BASE = "https://taskflow-mern-r737.onrender.com/api";
+
+// URL de Développement
+const API_BASE = "http://localhost:5000/api";
 
 function App() {
     const [token, setToken] = useState(localStorage.getItem("token"));

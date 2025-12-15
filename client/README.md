@@ -1,16 +1,36 @@
-# React + Vite
+# TaskFlow - Application de Gestion de Tâches SaaS
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Bienvenue sur **TaskFlow**, une application web complète permettant aux utilisateurs de gérer leurs tâches quotidiennes avec une interface moderne et fluide.
 
-Currently, two official plugins are available:
+**VOIR LA DÉMO EN LIGNE :** [https://taskflow-mern.vercel.app](https://taskflow-mern.vercel.app)
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+![TaskFlow Screenshot](https://via.placeholder.com/1000x500?text=Mets+une+capture+d'ecran+ici) 
 
-## React Compiler
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## Fonctionnalités Clés
 
-## Expanding the ESLint configuration
+- **Authentification Sécurisée :** Inscription, Connexion (JWT, BCrypt), Protection des routes.
+- **Espace Personnel :** Chaque utilisateur possède ses propres données privées.
+- **Interface Moderne :** Design sombre (Dark Mode), Glassmorphism, Animations fluides.
+- **Drag & Drop :** Réorganisation des tâches par glisser-déposer.
+- **Temps Réel :** Feedback instantané (Optimistic UI), Sons, Notifications Toast.
+- **100% Responsive :** Fonctionne sur Mobile, Tablette et Desktop.
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+## Stack Technique (MERN)
+
+- **Frontend :** React.js, Vite, Tailwind CSS v4, Axios, Hello-Pangea DnD.
+- **Backend :** Node.js, Express.js.
+- **Base de Données :** MongoDB Atlas (Cloud).
+- **Hébergement :** Vercel (Frontend) + Render (Backend).
+
+## Installation Locale
+
+Si vous souhaitez lancer ce projet sur votre machine :
+
+1. Clonez le dépôt
+2. Installez les dépendances (`npm install` dans /client et /server)
+3. Configurez les variables d'environnement (.env)
+4. Lancez `npm run dev`
+
+---
+*Réalisé par Steven Dagbo - Développeur Fullstack*
