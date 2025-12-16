@@ -23,14 +23,5 @@ Bienvenue sur **TaskFlow**, une application web complète permettant aux utilisa
 - **Base de Données :** MongoDB Atlas (Cloud).
 - **Hébergement :** Vercel (Frontend) + Render (Backend).
 
-## Installation Locale
-
-Si vous souhaitez lancer ce projet sur votre machine :
-
-1. Clonez le dépôt
-2. Installez les dépendances (`npm install` dans /client et /server)
-3. Configurez les variables d'environnement (.env)
-4. Lancez `npm run dev`
-
 ---
 *Réalisé par Steven Dagbo - Développeur Fullstack*
