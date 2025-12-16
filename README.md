@@ -4,8 +4,9 @@ Bienvenue sur **TaskFlow**, une application web complète permettant aux utilisa
 
 **VOIR LA DÉMO EN LIGNE :** [https://taskflow-mern.vercel.app](https://taskflow-mern.vercel.app)
 
-![TaskFlow Screenshot](https://via.placeholder.com/1000x500?text=<img width="1919" height="864" alt="image" src="https://github.com/user-attachments/assets/2e13a3e3-3d05-4e89-85a0-b2e7db80217f" />) 
-![TaskFlow Screenshot](https://via.placeholder.com/1000x500?text=<img width="1919" height="869" alt="image" src="https://github.com/user-attachments/assets/6dec999a-5547-4eb1-94e5-32f98112436d" />)
+**CAPTURE D'ÉCRAN :** 
+<img width="1919" height="864" alt="image" src="https://github.com/user-attachments/assets/2e13a3e3-3d05-4e89-85a0-b2e7db80217f" />
+<img width="1919" height="869" alt="image" src="https://github.com/user-attachments/assets/6dec999a-5547-4eb1-94e5-32f98112436d" />
 
 
 ## Fonctionnalités Clés
