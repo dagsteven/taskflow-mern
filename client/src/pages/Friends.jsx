@@ -2,9 +2,10 @@ import { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import toast from 'react-hot-toast';
 
+// URL DE PRODUCTION
 const API_BASE = "https://taskflow-mern-r737.onrender.com/api";
 
-function Friends({ token, goBack, currentUsername }) { // <-- NOUVEAU PROP
+function Friends({ token, goBack, currentUsername }) {
     const [query, setQuery] = useState("");
     const [results, setResults] = useState([]);
     const [friends, setFriends] = useState([]);
@@ -136,41 +137,54 @@ function Friends({ token, goBack, currentUsername }) { // <-- NOUVEAU PROP
                 <h3 className="text-xl font-bold mb-6 text-gray-200 flex items-center gap-2"><span>🏆</span> Classement & Amis</h3>
                 {friends.length > 0 ? (
                     <div className="flex flex-col gap-3">
-                        {friends.map((friend, index) => (
-                            <div 
-                                key={index} 
-                                onClick={() => viewFriend(friend)} 
-                                className="flex justify-between items-center p-4 bg-gray-900 rounded-2xl border border-gray-700 relative overflow-hidden group hover:border-blue-500 hover:shadow-lg hover:shadow-blue-500/20 cursor-pointer transition-all"
-                            >
-                                {index === 0 && <div className="absolute left-0 top-0 bottom-0 w-2 bg-yellow-400"></div>}
-                                {index === 1 && <div className="absolute left-0 top-0 bottom-0 w-2 bg-gray-400"></div>}
-                                {index === 2 && <div className="absolute left-0 top-0 bottom-0 w-2 bg-orange-700"></div>}
+                        {friends.map((friend, index) => {
+                            // On vérifie si c'est moi
+                            const isMe = friend.username === currentUsername;
 
-                                <div className="flex items-center gap-4 pl-2">
-                                    <span className={`font-bold text-xl w-8 ${index < 3 ? 'text-white' : 'text-gray-500'}`}>#{index + 1}</span>
-                                    <div className="w-10 h-10 rounded-full bg-gray-800 border border-gray-600 flex items-center justify-center font-bold text-gray-300">{friend.username.charAt(0).toUpperCase()}</div>
-                                    <div className="flex flex-col">
-                                        <span className="font-bold text-lg text-white group-hover:text-blue-400 transition-colors">{friend.username}</span>
-                                        <span className="text-sm text-gray-400 font-medium">{friend.score} Tâches complétées</span>
+                            return (
+                                <div 
+                                    key={index} 
+                                    // Si c'est moi, pas de clic. Sinon, on ouvre le modal.
+                                    onClick={() => !isMe && viewFriend(friend)} 
+                                    // Si c'est moi, curseur normal. Sinon, main (pointer) et hover bleu.
+                                    className={`flex justify-between items-center p-4 bg-gray-900 rounded-2xl border border-gray-700 relative overflow-hidden transition-all ${isMe ? 'cursor-default' : 'cursor-pointer hover:border-blue-500 hover:shadow-lg hover:shadow-blue-500/20 group'}`}
+                                >
+                                    {index === 0 && <div className="absolute left-0 top-0 bottom-0 w-2 bg-yellow-400"></div>}
+                                    {index === 1 && <div className="absolute left-0 top-0 bottom-0 w-2 bg-gray-400"></div>}
+                                    {index === 2 && <div className="absolute left-0 top-0 bottom-0 w-2 bg-orange-700"></div>}
+
+                                    <div className="flex items-center gap-4 pl-2">
+                                        <span className={`font-bold text-xl w-8 ${index < 3 ? 'text-white' : 'text-gray-500'}`}>#{index + 1}</span>
+                                        <div className="w-10 h-10 rounded-full bg-gray-800 border border-gray-600 flex items-center justify-center font-bold text-gray-300">{friend.username.charAt(0).toUpperCase()}</div>
+                                        <div className="flex flex-col">
+                                            {/* Si c'est moi, on affiche "Moi" à côté du pseudo */}
+                                            <div className="flex items-center gap-2">
+                                                <span className={`font-bold text-lg ${!isMe ? 'text-white group-hover:text-blue-400 transition-colors' : 'text-gray-300'}`}>
+                                                    {friend.username}
+                                                </span>
+                                                {isMe && <span className="text-xs bg-gray-700 text-gray-400 px-1.5 rounded">Moi</span>}
+                                            </div>
+                                            <span className="text-sm text-gray-400 font-medium">{friend.score} Tâches complétées</span>
+                                        </div>
                                     </div>
-                                </div>
-                                
-                                <div className="flex items-center gap-4">
-                                    <span className="text-xs text-gray-600 uppercase font-bold tracking-wider group-hover:text-blue-500">Voir</span>
                                     
-                                    {/* CONDITION : Si ce n'est pas moi, j'affiche le bouton */}
-                                    {friend.username !== currentUsername && (
-                                        <button 
-                                            onClick={(e) => { e.stopPropagation(); removeFriend(friend.username); }} 
-                                            className="p-2 text-gray-600 hover:text-red-500 hover:bg-red-500/10 rounded-lg transition-all opacity-100 md:opacity-0 md:group-hover:opacity-100 shrink-0" 
-                                            title="Retirer cet ami"
-                                        >
-                                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5"><path strokeLinecap="round" strokeLinejoin="round" d="M22 10.5h-6m-2.25-4.125a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zM4 19.235v-.11a6.375 6.375 0 0112.75 0v.109A12.318 12.318 0 019.374 21c-2.331 0-4.512-.645-6.374-1.766z" /></svg>
-                                        </button>
+                                    {/* Si ce n'est PAS moi, on affiche les boutons Voir et Supprimer */}
+                                    {!isMe && (
+                                        <div className="flex items-center gap-4">
+                                            <span className="text-xs text-gray-600 uppercase font-bold tracking-wider group-hover:text-blue-500">Voir</span>
+                                            
+                                            <button 
+                                                onClick={(e) => { e.stopPropagation(); removeFriend(friend.username); }} 
+                                                className="p-2 text-gray-600 hover:text-red-500 hover:bg-red-500/10 rounded-lg transition-all opacity-100 md:opacity-0 md:group-hover:opacity-100 shrink-0" 
+                                                title="Retirer cet ami"
+                                            >
+                                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5"><path strokeLinecap="round" strokeLinejoin="round" d="M22 10.5h-6m-2.25-4.125a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zM4 19.235v-.11a6.375 6.375 0 0112.75 0v.109A12.318 12.318 0 019.374 21c-2.331 0-4.512-.645-6.374-1.766z" /></svg>
+                                            </button>
+                                        </div>
                                     )}
                                 </div>
-                            </div>
-                        ))}
+                            );
+                        })}
                     </div>
                 ) : (
                     <div className="text-center py-10 text-gray-500 border-2 border-dashed border-gray-700 rounded-xl"><p className="text-sm">Vous n'avez pas encore d'amis.</p></div>
