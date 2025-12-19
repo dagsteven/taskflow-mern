@@ -2,18 +2,15 @@ import { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import toast from 'react-hot-toast';
 
-
 const API_BASE = "https://taskflow-mern-r737.onrender.com/api";
 
-
-function Friends({ token, goBack }) {
+function Friends({ token, goBack, currentUsername }) { // <-- NOUVEAU PROP
     const [query, setQuery] = useState("");
     const [results, setResults] = useState([]);
     const [friends, setFriends] = useState([]);
     const [requests, setRequests] = useState([]);
     const [loading, setLoading] = useState(false);
 
-    // --- NOUVEAU : GESTION DU MODAL AMI ---
     const [selectedFriend, setSelectedFriend] = useState(null); 
     const [friendTodos, setFriendTodos] = useState([]); 
     const [loadingTodos, setLoadingTodos] = useState(false);
@@ -160,14 +157,17 @@ function Friends({ token, goBack }) {
                                 
                                 <div className="flex items-center gap-4">
                                     <span className="text-xs text-gray-600 uppercase font-bold tracking-wider group-hover:text-blue-500">Voir</span>
-                                    {/* CORRECTION ICÔNE SUPPRESSION ICI 👇 */}
-                                    <button 
-                                        onClick={(e) => { e.stopPropagation(); removeFriend(friend.username); }} 
-                                        className="p-2 text-gray-600 hover:text-red-500 hover:bg-red-500/10 rounded-lg transition-all opacity-100 md:opacity-0 md:group-hover:opacity-100 shrink-0" 
-                                        title="Retirer cet ami"
-                                    >
-                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5"><path strokeLinecap="round" strokeLinejoin="round" d="M22 10.5h-6m-2.25-4.125a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zM4 19.235v-.11a6.375 6.375 0 0112.75 0v.109A12.318 12.318 0 019.374 21c-2.331 0-4.512-.645-6.374-1.766z" /></svg>
-                                    </button>
+                                    
+                                    {/* CONDITION : Si ce n'est pas moi, j'affiche le bouton */}
+                                    {friend.username !== currentUsername && (
+                                        <button 
+                                            onClick={(e) => { e.stopPropagation(); removeFriend(friend.username); }} 
+                                            className="p-2 text-gray-600 hover:text-red-500 hover:bg-red-500/10 rounded-lg transition-all opacity-100 md:opacity-0 md:group-hover:opacity-100 shrink-0" 
+                                            title="Retirer cet ami"
+                                        >
+                                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5"><path strokeLinecap="round" strokeLinejoin="round" d="M22 10.5h-6m-2.25-4.125a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zM4 19.235v-.11a6.375 6.375 0 0112.75 0v.109A12.318 12.318 0 019.374 21c-2.331 0-4.512-.645-6.374-1.766z" /></svg>
+                                        </button>
+                                    )}
                                 </div>
                             </div>
                         ))}
@@ -203,6 +203,7 @@ function Friends({ token, goBack }) {
                     </div>
                 </div>
             )}
+
         </div>
     );
 }

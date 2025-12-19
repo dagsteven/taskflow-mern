@@ -100,9 +100,8 @@ function App() {
             }
         };
 
-        fetchData(); // Appel immédiat
+        fetchData(); 
 
-        // Polling toutes les 10 secondes
         const intervalId = setInterval(() => {
             fetchData();
         }, 10000);
@@ -233,11 +232,13 @@ function App() {
             </div>
 
             {view === "friends" ? (
+                // ICI : ON PASSE L'ARGUMENT "currentUsername"
                 <div className="w-full max-w-3xl">
-                    <Friends token={token} goBack={() => setView("tasks")} />
+                    <Friends token={token} goBack={() => setView("tasks")} currentUsername={username} />
                 </div>
             ) : (
                 <>
+                    {/* ... Le reste du code des tâches ... */}
                     <div className="w-full max-w-3xl mb-8">
                         <div className="flex justify-between text-sm text-gray-400 mb-2 font-medium"><span>Progression</span><span>{progress}%</span></div>
                         <div className="w-full bg-gray-800 rounded-full h-3 overflow-hidden border border-gray-700"><div className="bg-linear-to-r from-blue-500 to-purple-600 h-3 rounded-full transition-all duration-500 ease-out" style={{ width: `${progress}%` }}></div></div>
@@ -257,34 +258,22 @@ function App() {
                                                     {(provided, snapshot) => (
                                                         <div ref={provided.innerRef} {...provided.draggableProps} className={`group p-4 rounded-2xl flex items-center border border-gray-800 hover:border-gray-600 transition-colors ${todo.complete ? "bg-gray-800/50 opacity-50" : "bg-gray-800"} ${snapshot.isDragging ? "shadow-2xl shadow-purple-500/40 border-purple-500 scale-105 z-50" : ""}`}>
                                                             {editingId === todo._id ? (
-                                                                // --- ZONE ÉDITION CORRIGÉE (RESPONSIVE) ---
                                                                 <div className="flex items-center w-full gap-2 min-w-0">
                                                                     <input type="text" value={editText} onChange={(e) => setEditText(e.target.value)} className="grow bg-gray-900 border border-purple-500 rounded-lg p-2 text-white outline-none min-w-0" autoFocus onKeyDown={(e) => e.key === 'Enter' && saveEdit(todo._id)} />
-                                                                    
-                                                                    <div 
-                                                                        onClick={() => setEditIsPublic(!editIsPublic)}
-                                                                        className={`px-2 py-2 rounded-lg cursor-pointer text-xs font-bold border transition-colors shrink-0 ${editIsPublic ? "bg-blue-900/50 border-blue-500 text-blue-400" : "bg-gray-700 border-gray-600 text-gray-400"}`}
-                                                                    >
-                                                                        {editIsPublic ? "Pub" : "Priv"}
-                                                                    </div>
-
+                                                                    <div onClick={() => setEditIsPublic(!editIsPublic)} className={`px-2 py-2 rounded-lg cursor-pointer text-xs font-bold border transition-colors shrink-0 ${editIsPublic ? "bg-blue-900/50 border-blue-500 text-blue-400" : "bg-gray-700 border-gray-600 text-gray-400"}`}>{editIsPublic ? "Pub" : "Priv"}</div>
                                                                     <div className="flex gap-1 shrink-0">
                                                                         <div onClick={() => saveEdit(todo._id)} className="p-2 text-green-400 hover:bg-green-400/20 rounded-lg cursor-pointer"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5"><path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg></div>
                                                                         <div onClick={cancelEditing} className="p-2 text-red-400 hover:bg-red-400/20 rounded-lg cursor-pointer"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg></div>
                                                                     </div>
                                                                 </div>
                                                             ) : (
-                                                                // --- MODE NORMAL (RESPONSIVE) ---
                                                                 <>
                                                                     <div {...provided.dragHandleProps} className="mr-4 cursor-grab active:cursor-grabbing text-gray-600 p-3 -ml-3 hover:text-white shrink-0"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-6 h-6"><path strokeLinecap="round" strokeLinejoin="round" d="M3.75 9h16.5m-16.5 6.75h16.5" /></svg></div>
-                                                                    
                                                                     <div onClick={() => completeTodo(todo._id)} className={`cursor-pointer w-6 h-6 mr-4 rounded-full border-2 flex items-center justify-center transition-colors shrink-0 ${todo.complete ? "bg-green-500 border-green-500" : "border-gray-600 group-hover:border-purple-400"}`}>{todo.complete && <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-white" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" /></svg>}</div>
-                                                                    
                                                                     <div onClick={() => completeTodo(todo._id)} className={`text-lg font-medium grow text-gray-100 cursor-pointer flex flex-wrap items-center gap-2 min-w-0 ${todo.complete ? "line-through" : ""}`}>
-                                                                        <span className="break-all w-full">{todo.text}</span>
+                                                                        <span className="wrap-break-word w-full">{todo.text}</span>
                                                                         {todo.isPublic ? <span className="text-[10px] bg-blue-900/50 text-blue-400 px-1.5 py-0.5 rounded-full border border-blue-800 shrink-0">Public</span> : <span className="text-[10px] bg-gray-700/50 text-gray-500 px-1.5 py-0.5 rounded-full border border-gray-600 shrink-0">Privé</span>}
                                                                     </div>
-                                                                    
                                                                     <div className="flex gap-1 shrink-0 ml-2">
                                                                         <div onClick={() => startEditing(todo._id, todo.text, todo.isPublic)} className="w-8 h-8 rounded-lg flex items-center justify-center text-gray-400 hover:bg-blue-500/20 hover:text-blue-400 cursor-pointer transition-colors"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5"><path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10" /></svg></div>
                                                                         <div onClick={(e) => { e.stopPropagation(); deleteTodo(todo._id) }} className="w-8 h-8 rounded-lg flex items-center justify-center text-gray-400 hover:bg-red-500/20 hover:text-red-500 cursor-pointer transition-colors"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg></div>
@@ -310,7 +299,7 @@ function App() {
                             <div className="bg-gray-900 text-white p-6 rounded-3xl w-full max-w-md border border-gray-700">
                                 <div className="absolute top-4 right-4 p-2 cursor-pointer hover:text-red-500" onClick={() => setPopupActive(false)}>X</div>
                                 <h3 className="text-2xl font-bold mb-6">Nouvelle Tâche</h3>
-                                <input type="text" className="w-full p-4 bg-gray-950 border border-gray-700 rounded-xl mb-4 focus:border-blue-500 focus:outline-none" onChange={e => setNewTodo(e.target.value)} value={newTodo} placeholder="Quoi de neuf ?" autoFocus onKeyDown={(e) => e.key === 'Enter' && addTodo()}/>
+                                <input type="text" className="w-full p-4 bg-gray-950 border border-gray-700 rounded-xl mb-6 focus:border-blue-500 focus:outline-none" onChange={e => setNewTodo(e.target.value)} value={newTodo} placeholder="Quoi de neuf ?" autoFocus onKeyDown={(e) => e.key === 'Enter' && addTodo()}/>
                                 <div className={`flex items-center gap-3 p-3 rounded-xl mb-6 cursor-pointer border transition-all ${newTodoPublic ? "bg-blue-900/30 border-blue-500" : "bg-gray-800 border-gray-700"}`} onClick={() => setNewTodoPublic(!newTodoPublic)}>
                                     <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${newTodoPublic ? "border-blue-400 bg-blue-400" : "border-gray-500"}`}>{newTodoPublic && <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4 text-white"><path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" /></svg>}</div>
                                     <div className="flex flex-col"><span className={`font-bold ${newTodoPublic ? "text-blue-400" : "text-gray-400"}`}>{newTodoPublic ? "Tâche Publique 🌍" : "Tâche Privée 🔒"}</span><span className="text-xs text-gray-500">{newTodoPublic ? "Visible par les amis & Compte pour le classement" : "Invisible & Ne compte pas pour le classement"}</span></div>
