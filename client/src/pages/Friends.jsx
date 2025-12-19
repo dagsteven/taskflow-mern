@@ -3,7 +3,6 @@ import axios from 'axios';
 import toast from 'react-hot-toast';
 
 
-// URL DE PRODUCTION
 const API_BASE = "https://taskflow-mern-r737.onrender.com/api";
 
 
@@ -15,11 +14,13 @@ function Friends({ token, goBack }) {
     const [loading, setLoading] = useState(false);
 
     // --- NOUVEAU : GESTION DU MODAL AMI ---
-    const [selectedFriend, setSelectedFriend] = useState(null); // L'ami qu'on regarde
-    const [friendTodos, setFriendTodos] = useState([]); // Ses tâches
+    const [selectedFriend, setSelectedFriend] = useState(null); 
+    const [friendTodos, setFriendTodos] = useState([]); 
     const [loadingTodos, setLoadingTodos] = useState(false);
 
-    const getConfig = useCallback(() => ({ headers: { Authorization: `Bearer ${token}` } }), [token]);
+    const getConfig = useCallback(() => ({ 
+        headers: { Authorization: `Bearer ${token}` } 
+    }), [token]);
 
     const loadFriends = useCallback(async () => {
         try {
@@ -37,20 +38,16 @@ function Friends({ token, goBack }) {
 
     useEffect(() => { loadFriends(); loadRequests(); }, [loadFriends, loadRequests]);
 
-    useEffect(() => { 
-        // 1. Chargement immédiat
-        loadFriends(); 
-        loadRequests();
-
-        // 2. Rafraîchissement automatique toutes les 5 secondes (plus rapide ici)
-        const intervalId = setInterval(() => {
-            loadFriends();
-            loadRequests();
-        }, 5000);
-
-        // Nettoyage
-        return () => clearInterval(intervalId);
-    }, [loadFriends, loadRequests]);
+    useEffect(() => {
+        if (!query.trim()) { setResults([]); return; }
+        const delayDebounce = setTimeout(async () => {
+            try {
+                const res = await axios.get(`${API_BASE}/social/search?q=${query.trim()}`, getConfig());
+                setResults(res.data);
+            } catch (err) { console.error(err); }
+        }, 300);
+        return () => clearTimeout(delayDebounce);
+    }, [query, getConfig]);
 
     const sendRequest = async (username) => {
         try {
@@ -79,7 +76,6 @@ function Friends({ token, goBack }) {
         } catch { toast.error("Erreur suppression"); }
     };
 
-    // --- NOUVEAU : VOIR LES TÂCHES D'UN AMI ---
     const viewFriend = async (friend) => {
         setSelectedFriend(friend);
         setLoadingTodos(true);
@@ -144,7 +140,6 @@ function Friends({ token, goBack }) {
                 {friends.length > 0 ? (
                     <div className="flex flex-col gap-3">
                         {friends.map((friend, index) => (
-                            // RENDRE LA CARTE CLIQUABLE
                             <div 
                                 key={index} 
                                 onClick={() => viewFriend(friend)} 
@@ -165,7 +160,12 @@ function Friends({ token, goBack }) {
                                 
                                 <div className="flex items-center gap-4">
                                     <span className="text-xs text-gray-600 uppercase font-bold tracking-wider group-hover:text-blue-500">Voir</span>
-                                    <button onClick={(e) => { e.stopPropagation(); removeFriend(friend.username); }} className="p-2 text-gray-600 hover:text-red-500 hover:bg-red-500/10 rounded-lg opacity-0 group-hover:opacity-100 transition-all" title="Retirer cet ami">
+                                    {/* CORRECTION ICÔNE SUPPRESSION ICI 👇 */}
+                                    <button 
+                                        onClick={(e) => { e.stopPropagation(); removeFriend(friend.username); }} 
+                                        className="p-2 text-gray-600 hover:text-red-500 hover:bg-red-500/10 rounded-lg transition-all opacity-100 md:opacity-0 md:group-hover:opacity-100 shrink-0" 
+                                        title="Retirer cet ami"
+                                    >
                                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5"><path strokeLinecap="round" strokeLinejoin="round" d="M22 10.5h-6m-2.25-4.125a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zM4 19.235v-.11a6.375 6.375 0 0112.75 0v.109A12.318 12.318 0 019.374 21c-2.331 0-4.512-.645-6.374-1.766z" /></svg>
                                     </button>
                                 </div>
@@ -177,22 +177,17 @@ function Friends({ token, goBack }) {
                 )}
             </div>
 
-            {/* --- MODAL : DÉTAILS DE L'AMI --- */}
             {selectedFriend && (
                 <div className="fixed inset-0 bg-black/80 flex items-center justify-center backdrop-blur-sm z-50 p-4" onClick={closeFriendModal}>
                     <div className="bg-gray-900 text-white p-6 rounded-3xl w-full max-w-md border border-gray-700 shadow-2xl relative" onClick={e => e.stopPropagation()}>
                         <div className="absolute top-4 right-4 p-2 cursor-pointer hover:text-red-500" onClick={closeFriendModal}>
                             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-6 h-6"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
                         </div>
-                        
                         <div className="text-center mb-6">
-                            <div className="w-16 h-16 rounded-full bg-linear-to-br from-blue-500 to-purple-600 mx-auto mb-3 flex items-center justify-center text-3xl font-bold">
-                                {selectedFriend.username.charAt(0).toUpperCase()}
-                            </div>
+                            <div className="w-16 h-16 rounded-full bg-linear-to-br from-blue-500 to-purple-600 mx-auto mb-3 flex items-center justify-center text-3xl font-bold">{selectedFriend.username.charAt(0).toUpperCase()}</div>
                             <h3 className="text-2xl font-bold">{selectedFriend.username}</h3>
                             <p className="text-gray-400 text-sm">Tâches publiques</p>
                         </div>
-
                         {loadingTodos ? (
                             <div className="flex justify-center py-8"><div className="animate-spin rounded-full h-8 w-8 border-2 border-purple-500"></div></div>
                         ) : (
@@ -202,17 +197,12 @@ function Friends({ token, goBack }) {
                                         <div className={`w-4 h-4 rounded-full border-2 ${todo.complete ? "bg-green-500 border-green-500" : "border-gray-600"}`}></div>
                                         <span className={`text-sm ${todo.complete ? "line-through text-gray-500" : "text-gray-200"}`}>{todo.text}</span>
                                     </div>
-                                )) : (
-                                    <div className="text-center py-6 text-gray-500 italic">
-                                        Cet utilisateur n'a aucune tâche publique. 🔒
-                                    </div>
-                                )}
+                                )) : <div className="text-center py-6 text-gray-500 italic">Cet utilisateur n'a aucune tâche publique. 🔒</div>}
                             </div>
                         )}
                     </div>
                 </div>
             )}
-
         </div>
     );
 }
