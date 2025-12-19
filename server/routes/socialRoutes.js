@@ -14,5 +14,6 @@ router.post('/remove', protect, controller.removeFriend);
 router.post('/request/send', protect, controller.sendFriendRequest);   // Envoyer une demande
 router.get('/request/list', protect, controller.getFriendRequests);    // Voir mes demandes
 router.post('/request/accept', protect, controller.acceptFriendRequest); // Accepter une demande
+router.get('/todos/:friendId', protect, controller.getFriendTodos);      // Voir les tâches d'un ami
 
 module.exports = router;

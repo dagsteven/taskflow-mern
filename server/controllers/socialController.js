@@ -1,5 +1,18 @@
 const User = require('../models/User');
-const Todo = require('../models/Todo'); // <--- AJOUT IMPORTANT ICI
+const Todo = require('../models/Todo');
+const CryptoJS = require("crypto-js"); // <--- IL MANQUAIT SOUVENT ÇA
+
+// --- FONCTION UTILITAIRE DE DÉCRYPTAGE (La même que dans todoController) ---
+const decryptText = (ciphertext) => {
+    try {
+        if (!ciphertext) return "";
+        const bytes = CryptoJS.AES.decrypt(ciphertext, process.env.CRYPTO_SECRET);
+        const originalText = bytes.toString(CryptoJS.enc.Utf8);
+        return originalText || ciphertext;
+    } catch (e) {
+        return ciphertext;
+    }
+};
 
 // 1. Rechercher des utilisateurs
 exports.searchUsers = async (req, res) => {
@@ -20,7 +33,7 @@ exports.searchUsers = async (req, res) => {
   }
 };
 
-// A. Envoyer une demande d'ami
+// 2. Envoyer une demande d'ami
 exports.sendFriendRequest = async (req, res) => {
   try {
     const { username } = req.body;
@@ -28,35 +41,33 @@ exports.sendFriendRequest = async (req, res) => {
     const targetUser = await User.findOne({ username });
 
     if (!targetUser) return res.status(404).json({ message: "Utilisateur introuvable" });
-    if (currentUser.username === username) return res.status(400).json({ message: "C'est vous..." });
-
-    // Vérifications
+    if (currentUser.username === username) return res.status(400).json({ message: "Impossible de s'ajouter soi-même" });
     if (currentUser.friends.includes(targetUser._id)) return res.status(400).json({ message: "Déjà amis !" });
     if (targetUser.friendRequests.includes(currentUser._id)) return res.status(400).json({ message: "Demande déjà envoyée" });
-    
-    // Cas où l'autre m'a déjà envoyé une demande -> On devient amis direct ? (Optionnel, ici on garde simple)
-    
-    // ACTION : Ajouter mon ID dans SA liste de demandes
+
     targetUser.friendRequests.push(currentUser._id);
     await targetUser.save();
 
     res.json({ message: `Demande envoyée à ${targetUser.username}` });
-  } catch (err) { res.status(500).json({ message: "Erreur envoi" }); }
+  } catch (err) {
+    res.status(500).json({ message: "Erreur envoi" });
+  }
 };
 
-// B. Voir mes demandes en attente
+// 3. Voir mes demandes
 exports.getFriendRequests = async (req, res) => {
   try {
-    // On récupère l'utilisateur et on "déplie" (populate) les infos des demandeurs
     const user = await User.findById(req.user.id).populate('friendRequests', 'username');
     res.json(user.friendRequests);
-  } catch (err) { res.status(500).json({ message: "Erreur récupération" }); }
+  } catch (err) {
+    res.status(500).json({ message: "Erreur récupération" });
+  }
 };
 
-// C. Accepter une demande
+// 4. Accepter une demande
 exports.acceptFriendRequest = async (req, res) => {
   try {
-    const { requesterId } = req.body; // L'ID de celui qui a fait la demande
+    const { requesterId } = req.body;
     const currentUser = await User.findById(req.user.id);
     const requester = await User.findById(requesterId);
 
@@ -64,21 +75,20 @@ exports.acceptFriendRequest = async (req, res) => {
         return res.status(400).json({ message: "Aucune demande de cette personne" });
     }
 
-    // 1. Ajouter aux amis (Réciproque)
     currentUser.friends.push(requesterId);
     requester.friends.push(currentUser._id);
-
-    // 2. Retirer de la liste des demandes
     currentUser.friendRequests.pull(requesterId);
 
     await currentUser.save();
     await requester.save();
 
     res.json({ message: `Vous êtes maintenant ami avec ${requester.username} !` });
-  } catch (err) { res.status(500).json({ message: "Erreur acceptation" }); }
+  } catch (err) {
+    res.status(500).json({ message: "Erreur acceptation" });
+  }
 };
 
-// 3. Retirer un ami
+// 5. Retirer un ami
 exports.removeFriend = async (req, res) => {
   try {
     const { username } = req.body;
@@ -91,7 +101,6 @@ exports.removeFriend = async (req, res) => {
 
     currentUser.friends.pull(friend._id);
     await currentUser.save();
-
     friend.friends.pull(currentUser._id);
     await friend.save();
 
@@ -101,30 +110,27 @@ exports.removeFriend = async (req, res) => {
   }
 };
 
-// 4. LEADERBOARD (La fonction manquante)
+// 6. LEADERBOARD (Classement)
 exports.getLeaderboard = async (req, res) => {
   try {
-    // On récupère l'utilisateur et ses amis
     const currentUser = await User.findById(req.user.id).populate('friends', 'username');
     
-    // Liste : Moi + Mes Amis
     const leaderboardList = [
         { _id: currentUser._id, username: currentUser.username },
         ...currentUser.friends
     ];
 
-    // On compte les points pour chacun
     const leaderboardWithScores = await Promise.all(
         leaderboardList.map(async (user) => {
             const score = await Todo.countDocuments({ 
                 owner: user._id, 
-                complete: true 
+                complete: true,
+                isPublic: true // On ne compte que les tâches publiques
             });
-            return { username: user.username, score: score };
+            return { _id: user._id, username: user.username, score: score };
         })
     );
 
-    // Tri décroissant
     leaderboardWithScores.sort((a, b) => b.score - a.score);
 
     res.json(leaderboardWithScores);
@@ -132,4 +138,26 @@ exports.getLeaderboard = async (req, res) => {
     console.log(err);
     res.status(500).json({ message: "Erreur classement" });
   }
+};
+
+// 7. VOIR LES TÂCHES D'UN AMI (C'est ici qu'on ajoute le décryptage !)
+exports.getFriendTodos = async (req, res) => {
+    try {
+        const friendId = req.params.friendId;
+        
+        // On cherche les tâches de cet ami qui sont PUBLIQUES
+        const todos = await Todo.find({ owner: friendId, isPublic: true }).sort({ timestamp: -1 });
+
+        // ON DÉCRYPTE CHAQUE TÂCHE AVANT DE L'ENVOYER
+        const decryptedTodos = todos.map(todo => {
+            const t = todo.toObject();
+            t.text = decryptText(t.text);
+            return t;
+        });
+
+        res.json(decryptedTodos);
+    } catch (err) {
+        console.log(err);
+        res.status(500).json({ message: "Impossible de voir les tâches" });
+    }
 };
