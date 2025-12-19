@@ -7,6 +7,7 @@ import toast from 'react-hot-toast';
 const API_URL = "https://taskflow-mern-r737.onrender.com/api/auth";
 
 
+
 function Register({ setPage }) {
     const [username, setUsername] = useState("");
     const [password, setPassword] = useState("");

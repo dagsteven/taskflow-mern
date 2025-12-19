@@ -6,6 +6,7 @@ import toast from 'react-hot-toast';
 // URL DE PRODUCTION
 const API_BASE = "https://taskflow-mern-r737.onrender.com/api";
 
+
 function Friends({ token, goBack }) {
     const [query, setQuery] = useState("");
     const [results, setResults] = useState([]);
@@ -36,16 +37,20 @@ function Friends({ token, goBack }) {
 
     useEffect(() => { loadFriends(); loadRequests(); }, [loadFriends, loadRequests]);
 
-    useEffect(() => {
-        if (!query.trim()) { setResults([]); return; }
-        const delayDebounce = setTimeout(async () => {
-            try {
-                const res = await axios.get(`${API_BASE}/social/search?q=${query.trim()}`, getConfig());
-                setResults(res.data);
-            } catch (err) { console.error(err); }
-        }, 300);
-        return () => clearTimeout(delayDebounce);
-    }, [query, getConfig]);
+    useEffect(() => { 
+        // 1. Chargement immédiat
+        loadFriends(); 
+        loadRequests();
+
+        // 2. Rafraîchissement automatique toutes les 5 secondes (plus rapide ici)
+        const intervalId = setInterval(() => {
+            loadFriends();
+            loadRequests();
+        }, 5000);
+
+        // Nettoyage
+        return () => clearInterval(intervalId);
+    }, [loadFriends, loadRequests]);
 
     const sendRequest = async (username) => {
         try {

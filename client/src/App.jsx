@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import toast, { Toaster } from 'react-hot-toast';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
@@ -8,7 +8,6 @@ import Register from './pages/Register';
 import Friends from './pages/Friends';
 import { playSuccessSound } from './sounds';
 
-
 // URL DE PRODUCTION
 const API_BASE = "https://taskflow-mern-r737.onrender.com/api";
 
@@ -16,26 +15,34 @@ function App() {
     const [token, setToken] = useState(localStorage.getItem("token"));
     const [username, setUsername] = useState(localStorage.getItem("username") || "Invité");
     
-    // NOUVEAU : État pour les flammes 🔥
-    const [streak, setStreak] = useState(0);
-
     const [view, setView] = useState("tasks"); 
     const [page, setPage] = useState("login");
     const [todos, setTodos] = useState([]);
     const [popupActive, setPopupActive] = useState(false);
     const [newTodo, setNewTodo] = useState("");
-    const [newTodoPublic, setNewTodoPublic] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
+    
+    // Notification
+    const [hasNotification, setHasNotification] = useState(false);
+    const [currentLeaderboardSignature, setCurrentLeaderboardSignature] = useState("");
+
+    // Édition
     const [editingId, setEditingId] = useState(null);
     const [editText, setEditText] = useState("");
+    const [editIsPublic, setEditIsPublic] = useState(false);
+    const [newTodoPublic, setNewTodoPublic] = useState(false);
+    const [streak, setStreak] = useState(0);
 
-    const getConfig = () => ({
+    // --- FONCTIONS STABILISÉES ---
+    
+    const getConfig = useCallback(() => ({
         headers: { Authorization: `Bearer ${token}` }
-    });
+    }), [token]);
 
     const logout = () => {
         localStorage.removeItem("token");
         localStorage.removeItem("username");
+        localStorage.removeItem("savedLeaderboard");
         setToken(null);
         setUsername("Invité");
         setTodos([]);
@@ -44,51 +51,78 @@ function App() {
         toast('À bientôt !', { icon: '👋' });
     };
 
-    // CHARGEMENT INITIAL (Modifié pour lire le streak)
+    const checkNotifications = useCallback(async () => {
+        try {
+            const reqRes = await axios.get(API_BASE + "/social/request/list", getConfig());
+            const hasPendingRequests = reqRes.data.length > 0;
+
+            const leadRes = await axios.get(API_BASE + "/social/leaderboard", getConfig());
+            const newSignature = JSON.stringify(leadRes.data.map(u => u.username));
+            setCurrentLeaderboardSignature(newSignature);
+
+            const savedSignature = localStorage.getItem("savedLeaderboard");
+            const hasLeaderboardChanged = savedSignature && savedSignature !== newSignature;
+
+            if (hasPendingRequests || hasLeaderboardChanged) {
+                setHasNotification(true);
+            } else {
+                setHasNotification(false);
+            }
+        } catch (err) { console.error("Erreur check notif", err); }
+    }, [getConfig]);
+
+    const handleOpenFriends = () => {
+        setView(view === "friends" ? "tasks" : "friends");
+        setHasNotification(false);
+        if (currentLeaderboardSignature) {
+            localStorage.setItem("savedLeaderboard", currentLeaderboardSignature);
+        }
+    };
+
+    // --- CHARGEMENT PRINCIPAL ---
     useEffect(() => {
         if (!token) return;
-        const getTodos = async () => {
-            setIsLoading(true);
+        
+        const fetchData = async () => {
             try {
-                const res = await axios.get(API_BASE + "/todos", {
-                    headers: { Authorization: `Bearer ${token}` }
-                });
-                
-                // Gestion de la réponse (Liste simple ou Objet avec Streak)
+                const res = await axios.get(API_BASE + "/todos", getConfig());
                 if (Array.isArray(res.data)) {
                     setTodos(res.data);
                 } else {
                     setTodos(res.data.todos);
                     if (res.data.streak) setStreak(res.data.streak);
                 }
-
+                await checkNotifications();
             } catch (err) {
                 if(err.response && err.response.status === 401) logout();
             } finally {
                 setIsLoading(false);
             }
         };
-        getTodos();
-    }, [token]);
+
+        fetchData(); // Appel immédiat
+
+        // Polling toutes les 10 secondes
+        const intervalId = setInterval(() => {
+            fetchData();
+        }, 10000);
+
+        return () => clearInterval(intervalId);
+
+    }, [token, getConfig, checkNotifications]);
 
     // --- ACTIONS ---
 
     const completeTodo = async (id) => {
         const taskToToggle = todos.find(todo => todo._id === id);
         if (taskToToggle && !taskToToggle.complete) playSuccessSound();
-
         try {
             const res = await axios.put(API_BASE + "/todos/complete/" + id, {}, getConfig());
-            
-            // Le backend renvoie { todo: {...}, newStreak: 5 }
             const updatedTask = res.data.todo;
-            
-            // Si le serveur renvoie un nouveau streak (tâche validée), on met à jour
             if (res.data.newStreak !== undefined && res.data.newStreak !== null) {
                 if (res.data.newStreak > streak) toast.success("🔥 Série en cours !");
                 setStreak(res.data.newStreak);
             }
-
             setTodos(prev => prev.map(todo => todo._id === updatedTask._id ? updatedTask : todo));
         } catch { toast.error("Erreur connexion"); }
     }
@@ -115,8 +149,7 @@ function App() {
 
     const startEditing = (id, text, isPublic) => { setEditingId(id); setEditText(text); setEditIsPublic(isPublic); };
     const cancelEditing = () => { setEditingId(null); setEditText(""); setEditIsPublic(false); };
-    const [editIsPublic, setEditIsPublic] = useState(false);
-
+    
     const saveEdit = async (id) => {
         if (!editText.trim()) return;
         try {
@@ -168,14 +201,10 @@ function App() {
                     <div className="flex flex-col">
                         <span className="text-gray-400 text-sm font-medium uppercase tracking-wider">{greeting},</span>
                         <div className="flex items-center gap-2">
-                            <h1 className="text-2xl font-bold text-white leading-tight">
-                                {username}
-                            </h1>
-                            {/* AFFICHAGE DES FLAMMES 🔥 */}
+                            <h1 className="text-2xl font-bold text-white leading-tight">{username}</h1>
                             {streak > 0 && (
                                 <div className="flex items-center gap-1 bg-orange-900/50 border border-orange-600 px-2 py-0.5 rounded-full animate-pulse">
-                                    <span className="text-lg">🔥</span>
-                                    <span className="text-sm font-bold text-orange-400">{streak}</span>
+                                    <span className="text-lg">🔥</span><span className="text-sm font-bold text-orange-400">{streak}</span>
                                 </div>
                             )}
                         </div>
@@ -183,9 +212,20 @@ function App() {
                 </div>
 
                 <div className="flex items-center gap-2">
-                    <button onClick={() => setView(view === "friends" ? "tasks" : "friends")} className={`p-3 rounded-xl transition-all border ${view === "friends" ? "bg-purple-600 border-purple-500 text-white" : "bg-gray-800 text-purple-400 border-gray-700 hover:bg-gray-700"}`} title="Communauté">
+                    <button 
+                        onClick={handleOpenFriends}
+                        className={`relative p-3 rounded-xl transition-all border ${view === "friends" ? "bg-purple-600 border-purple-500 text-white" : "bg-gray-800 text-purple-400 border-gray-700 hover:bg-gray-700"}`}
+                        title="Communauté"
+                    >
+                        {hasNotification && (
+                            <span className="absolute -top-1 -right-1 flex h-3 w-3">
+                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                                <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
+                            </span>
+                        )}
                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-6 h-6"><path strokeLinecap="round" strokeLinejoin="round" d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 018.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0111.964-3.07M12 6.375a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zm8.25 2.25a2.625 2.625 0 11-5.25 0 2.625 2.625 0 015.25 0z" /></svg>
                     </button>
+
                     <button onClick={logout} className="p-3 rounded-xl bg-gray-800 text-gray-400 hover:bg-gray-700 hover:text-red-400 transition-all border border-gray-700" title="Se déconnecter">
                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-6 h-6"><path strokeLinecap="round" strokeLinejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15M12 9l-3 3m0 0l3 3m-3-3h12.75" /></svg>
                     </button>
@@ -193,7 +233,9 @@ function App() {
             </div>
 
             {view === "friends" ? (
-                <div className="w-full max-w-3xl"><Friends token={token} goBack={() => setView("tasks")} /></div>
+                <div className="w-full max-w-3xl">
+                    <Friends token={token} goBack={() => setView("tasks")} />
+                </div>
             ) : (
                 <>
                     <div className="w-full max-w-3xl mb-8">
@@ -215,21 +257,35 @@ function App() {
                                                     {(provided, snapshot) => (
                                                         <div ref={provided.innerRef} {...provided.draggableProps} className={`group p-4 rounded-2xl flex items-center border border-gray-800 hover:border-gray-600 transition-colors ${todo.complete ? "bg-gray-800/50 opacity-50" : "bg-gray-800"} ${snapshot.isDragging ? "shadow-2xl shadow-purple-500/40 border-purple-500 scale-105 z-50" : ""}`}>
                                                             {editingId === todo._id ? (
-                                                                <div className="flex items-center w-full gap-2">
-                                                                    <input type="text" value={editText} onChange={(e) => setEditText(e.target.value)} className="grow bg-gray-900 border border-purple-500 rounded-lg p-2 text-white outline-none" autoFocus onKeyDown={(e) => e.key === 'Enter' && saveEdit(todo._id)} />
-                                                                    <div onClick={() => setEditIsPublic(!editIsPublic)} className={`px-3 py-2 rounded-lg cursor-pointer text-xs font-bold border transition-colors ${editIsPublic ? "bg-blue-900/50 border-blue-500 text-blue-400" : "bg-gray-700 border-gray-600 text-gray-400"}`}>{editIsPublic ? "Public" : "Privé"}</div>
-                                                                    <div onClick={() => saveEdit(todo._id)} className="p-2 text-green-400 hover:bg-green-400/20 rounded-lg cursor-pointer"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5"><path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg></div>
-                                                                    <div onClick={cancelEditing} className="p-2 text-red-400 hover:bg-red-400/20 rounded-lg cursor-pointer"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg></div>
+                                                                // --- ZONE ÉDITION CORRIGÉE (RESPONSIVE) ---
+                                                                <div className="flex items-center w-full gap-2 min-w-0">
+                                                                    <input type="text" value={editText} onChange={(e) => setEditText(e.target.value)} className="grow bg-gray-900 border border-purple-500 rounded-lg p-2 text-white outline-none min-w-0" autoFocus onKeyDown={(e) => e.key === 'Enter' && saveEdit(todo._id)} />
+                                                                    
+                                                                    <div 
+                                                                        onClick={() => setEditIsPublic(!editIsPublic)}
+                                                                        className={`px-2 py-2 rounded-lg cursor-pointer text-xs font-bold border transition-colors shrink-0 ${editIsPublic ? "bg-blue-900/50 border-blue-500 text-blue-400" : "bg-gray-700 border-gray-600 text-gray-400"}`}
+                                                                    >
+                                                                        {editIsPublic ? "Pub" : "Priv"}
+                                                                    </div>
+
+                                                                    <div className="flex gap-1 shrink-0">
+                                                                        <div onClick={() => saveEdit(todo._id)} className="p-2 text-green-400 hover:bg-green-400/20 rounded-lg cursor-pointer"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5"><path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg></div>
+                                                                        <div onClick={cancelEditing} className="p-2 text-red-400 hover:bg-red-400/20 rounded-lg cursor-pointer"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg></div>
+                                                                    </div>
                                                                 </div>
                                                             ) : (
+                                                                // --- MODE NORMAL (RESPONSIVE) ---
                                                                 <>
-                                                                    <div {...provided.dragHandleProps} className="mr-4 cursor-grab active:cursor-grabbing text-gray-600 p-3 -ml-3 hover:text-white"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-6 h-6"><path strokeLinecap="round" strokeLinejoin="round" d="M3.75 9h16.5m-16.5 6.75h16.5" /></svg></div>
-                                                                    <div onClick={() => completeTodo(todo._id)} className={`cursor-pointer w-6 h-6 mr-4 rounded-full border-2 flex items-center justify-center transition-colors ${todo.complete ? "bg-green-500 border-green-500" : "border-gray-600 group-hover:border-purple-400"}`}>{todo.complete && <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-white" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" /></svg>}</div>
-                                                                    <div onClick={() => completeTodo(todo._id)} className={`text-lg font-medium grow text-gray-100 cursor-pointer flex items-center gap-2 ${todo.complete ? "line-through" : ""}`}>
-                                                                        {todo.text}
-                                                                        {todo.isPublic ? <span className="text-xs bg-blue-900/50 text-blue-400 px-2 py-0.5 rounded-full border border-blue-800">Public</span> : <span className="text-xs bg-gray-700/50 text-gray-500 px-2 py-0.5 rounded-full border border-gray-600">Privé</span>}
+                                                                    <div {...provided.dragHandleProps} className="mr-4 cursor-grab active:cursor-grabbing text-gray-600 p-3 -ml-3 hover:text-white shrink-0"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-6 h-6"><path strokeLinecap="round" strokeLinejoin="round" d="M3.75 9h16.5m-16.5 6.75h16.5" /></svg></div>
+                                                                    
+                                                                    <div onClick={() => completeTodo(todo._id)} className={`cursor-pointer w-6 h-6 mr-4 rounded-full border-2 flex items-center justify-center transition-colors shrink-0 ${todo.complete ? "bg-green-500 border-green-500" : "border-gray-600 group-hover:border-purple-400"}`}>{todo.complete && <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-white" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" /></svg>}</div>
+                                                                    
+                                                                    <div onClick={() => completeTodo(todo._id)} className={`text-lg font-medium grow text-gray-100 cursor-pointer flex flex-wrap items-center gap-2 min-w-0 ${todo.complete ? "line-through" : ""}`}>
+                                                                        <span className="break-all w-full">{todo.text}</span>
+                                                                        {todo.isPublic ? <span className="text-[10px] bg-blue-900/50 text-blue-400 px-1.5 py-0.5 rounded-full border border-blue-800 shrink-0">Public</span> : <span className="text-[10px] bg-gray-700/50 text-gray-500 px-1.5 py-0.5 rounded-full border border-gray-600 shrink-0">Privé</span>}
                                                                     </div>
-                                                                    <div className="flex gap-1">
+                                                                    
+                                                                    <div className="flex gap-1 shrink-0 ml-2">
                                                                         <div onClick={() => startEditing(todo._id, todo.text, todo.isPublic)} className="w-8 h-8 rounded-lg flex items-center justify-center text-gray-400 hover:bg-blue-500/20 hover:text-blue-400 cursor-pointer transition-colors"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5"><path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10" /></svg></div>
                                                                         <div onClick={(e) => { e.stopPropagation(); deleteTodo(todo._id) }} className="w-8 h-8 rounded-lg flex items-center justify-center text-gray-400 hover:bg-red-500/20 hover:text-red-500 cursor-pointer transition-colors"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg></div>
                                                                     </div>
@@ -255,12 +311,10 @@ function App() {
                                 <div className="absolute top-4 right-4 p-2 cursor-pointer hover:text-red-500" onClick={() => setPopupActive(false)}>X</div>
                                 <h3 className="text-2xl font-bold mb-6">Nouvelle Tâche</h3>
                                 <input type="text" className="w-full p-4 bg-gray-950 border border-gray-700 rounded-xl mb-4 focus:border-blue-500 focus:outline-none" onChange={e => setNewTodo(e.target.value)} value={newTodo} placeholder="Quoi de neuf ?" autoFocus onKeyDown={(e) => e.key === 'Enter' && addTodo()}/>
-                                
                                 <div className={`flex items-center gap-3 p-3 rounded-xl mb-6 cursor-pointer border transition-all ${newTodoPublic ? "bg-blue-900/30 border-blue-500" : "bg-gray-800 border-gray-700"}`} onClick={() => setNewTodoPublic(!newTodoPublic)}>
                                     <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${newTodoPublic ? "border-blue-400 bg-blue-400" : "border-gray-500"}`}>{newTodoPublic && <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4 text-white"><path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" /></svg>}</div>
                                     <div className="flex flex-col"><span className={`font-bold ${newTodoPublic ? "text-blue-400" : "text-gray-400"}`}>{newTodoPublic ? "Tâche Publique 🌍" : "Tâche Privée 🔒"}</span><span className="text-xs text-gray-500">{newTodoPublic ? "Visible par les amis & Compte pour le classement" : "Invisible & Ne compte pas pour le classement"}</span></div>
                                 </div>
-
                                 <div className="w-full p-4 rounded-xl bg-linear-to-r from-blue-500 to-purple-600 font-bold text-center cursor-pointer hover:brightness-110" onClick={addTodo}>Ajouter</div>
                             </div>
                         </div>
