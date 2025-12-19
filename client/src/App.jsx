@@ -8,8 +8,9 @@ import Register from './pages/Register';
 import Friends from './pages/Friends';
 import { playSuccessSound } from './sounds';
 
-// URL LOCALE (Pour le dev)
-const API_BASE = "http://localhost:5000/api";
+
+// URL DE PRODUCTION
+const API_BASE = "https://taskflow-mern-r737.onrender.com/api";
 
 function App() {
     const [token, setToken] = useState(localStorage.getItem("token"));

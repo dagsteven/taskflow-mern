@@ -2,8 +2,9 @@ import { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import toast from 'react-hot-toast';
 
-// URL LOCALE
-const API_BASE = "http://localhost:5000/api";
+
+// URL DE PRODUCTION
+const API_BASE = "https://taskflow-mern-r737.onrender.com/api";
 
 function Friends({ token, goBack }) {
     const [query, setQuery] = useState("");

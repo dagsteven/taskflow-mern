@@ -3,8 +3,8 @@ import axios from 'axios';
 import toast from 'react-hot-toast';
 
 
-// Url de développement
-const API_URL = "http://localhost:5000/api/auth";
+// URL de Production
+const API_URL = "https://taskflow-mern-r737.onrender.com/api/auth";
 
 
 function Register({ setPage }) {
