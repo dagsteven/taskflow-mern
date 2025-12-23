@@ -13,8 +13,6 @@ export default defineConfig({
         name: 'TaskFlow',
         description: 'Gérez vos tâches et défiez vos amis.',
         
-        // COULEURS DU THÈME (Gris foncé Tailwind gray-900)
-        // Cela permet que la barre de statut du téléphone soit de la même couleur que l'app
         theme_color: '#111827',
         background_color: '#111827',
         
@@ -26,8 +24,6 @@ export default defineConfig({
             src: 'pwa-192x192.png',
             sizes: '192x192',
             type: 'image/png',
-            // "any" = Icône normale
-            // "maskable" = Autorise Android à rogner les bords pour faire un rond parfait sans blanc/noir autour
             purpose: 'any maskable' 
           },
           {
