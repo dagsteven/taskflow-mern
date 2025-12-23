@@ -10,8 +10,7 @@ export default defineConfig({
       registerType: 'autoUpdate', // Met à jour l'app automatiquement dès qu'il y a du nouveau code
       includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'masked-icon.svg'],
       manifest: {
-        name: 'TaskFlow - Gestion Sociale',
-        short_name: 'TaskFlow',
+        name: 'TaskFlow',
         description: 'Gérez vos tâches et défiez vos amis.',
         
         // COULEURS DU THÈME (Gris foncé Tailwind gray-900)
