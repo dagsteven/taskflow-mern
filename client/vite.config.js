@@ -11,6 +11,7 @@ export default defineConfig({
       includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'masked-icon.svg'],
       manifest: {
         name: 'TaskFlow',
+        short_name: 'TaskFlow',
         description: 'Gérez vos tâches et défiez vos amis.',
         
         theme_color: '#111827',
